@@ -260,7 +260,7 @@ end
 
 cache = {};
 
-local driver = { name = "sql" };
+local driver = { name = "psql" };
 
 function driver:open(store, typ)
 	if not typ then -- default key-value store

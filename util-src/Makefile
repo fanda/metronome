@@ -33,7 +33,7 @@ hashes.so: hashes.o
 
 libluacrypt.so: luacrypt.o
 	MACOSX_DEPLOYMENT_TARGET="10.3"; export MACOSX_DEPLOYMENT_TARGET;
-	$(CC) -o $@ $< $(LDFLAGS) -llua -lcrypto -Wall
+	$(CC) -o $@ $< $(LDFLAGS) -lcrypto -Wall
 
 .c.o:
 	$(CC) $(CFLAGS) -I$(LUA_INCDIR) -c -o $@ $<
