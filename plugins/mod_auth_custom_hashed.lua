@@ -20,7 +20,9 @@ function new_hashpass_provider(host)
 	log("debug", "initializing custom_hashed authentication provider for host '%s'", host);
 
 	function provider.test_password(username, password)
+    log("debug", "host '%s'  user '%s'  pass '%s'", host, username, password);
 		local user = datamanager.user(username, host) or {};
+    log("debug", "hash '%s'", user.hash);
 		if password ~= nil and string.len(password) ~= 0 then
       if crypt(password, user.hash) == user.hash then
         return true;
