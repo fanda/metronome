@@ -48,7 +48,7 @@ function initialize_host(host)
 		local item = event.item;
 		stores_available:set(host, item.name, item);
 	end);
-	
+
 	host_session.events.add_handler("item-removed/data-driver", function (event)
 		local item = event.item;
 		stores_available:set(host, item.name, nil);
@@ -109,7 +109,7 @@ function get_driver(host, store)
 			driver_name = config.get(host, "default_storage") or "internal";
 		end
 	end
-	
+
 	local driver = load_driver(host, driver_name);
 	if not driver then
 		log("warn", "Falling back to null driver for %s storage on %s", store, host);
@@ -118,7 +118,7 @@ function get_driver(host, store)
 	end
 	return driver, driver_name;
 end
-	
+
 function open(host, store, typ)
 	local driver, driver_name = get_driver(host, store);
 	local ret, err = driver:open(store, typ);
@@ -144,7 +144,7 @@ function purge(user, host)
 	end
 	get_driver(host):purge(user);
 	olddm.purge(user, host);
-	
+
 	return true;
 end
 
@@ -165,6 +165,9 @@ function datamanager.purge(username, host)
 end
 function datamanager.users(host)
 	return get_driver(host):users();
+end
+function datamanager.user(username, host)
+	return get_driver(host):user(username);
 end
 
 return _M;

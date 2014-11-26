@@ -13,9 +13,9 @@ LD?=gcc
 .PHONY: all install clean
 .SUFFIXES: .c .o .so
 
-all: encodings.so hashes.so pposix.so signal.so
+all: encodings.so hashes.so pposix.so signal.so libluacrypt.so
 
-install: encodings.so hashes.so pposix.so signal.so
+install: encodings.so hashes.so pposix.so signal.so libluacrypt.so
 	install *.so ../util/
 
 clean:
@@ -30,6 +30,10 @@ encodings.so: encodings.o
 hashes.so: hashes.o
 	MACOSX_DEPLOYMENT_TARGET="10.3"; export MACOSX_DEPLOYMENT_TARGET;
 	$(CC) -o $@ $< $(LDFLAGS) -l$(OPENSSL_LIB)
+
+libluacrypt.so: luacrypt.o
+	MACOSX_DEPLOYMENT_TARGET="10.3"; export MACOSX_DEPLOYMENT_TARGET;
+	$(CC) -o $@ $< $(LDFLAGS) -llua -lcrypto -Wall
 
 .c.o:
 	$(CC) $(CFLAGS) -I$(LUA_INCDIR) -c -o $@ $<
