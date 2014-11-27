@@ -140,7 +140,7 @@ do -- process options to get a db connection
 	assert(connect());
 
 	-- Automatically create table, ignore failure (table probably already exists)
-	create_table();
+	-- create_table();
 end
 
 local function serialize(value)
