@@ -66,6 +66,7 @@ local function test_connection()
 	end
 end
 local function connect()
+  module:log("debug", "Trx connect to database");
 	if not test_connection() then
 		metronome.unlock_globals();
 		local dbh, err = DBI.Connect(
@@ -119,6 +120,7 @@ end
 
 do -- process options to get a db connection
 	local ok;
+  module:log("debug", "process options to get a db connection");
 	metronome.unlock_globals();
 	ok, DBI = pcall(require, "DBI");
 	if not ok then

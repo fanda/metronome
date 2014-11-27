@@ -95,21 +95,23 @@ function load_driver(host, driver_name)
 end
 
 function get_driver(host, store)
-	local storage = stores_overrides:get(host, store) or config.get(host, "storage");
-	local driver_name;
-	local option_type = type(storage);
-	if option_type == "string" then
-		driver_name = storage;
-	elseif option_type == "table" then
-		driver_name = storage[store];
-	end
-	if not driver_name then
-		if config.get(host, authentication) == "anonymous" then
-			driver_name = config.get(host, "default_storage") or "null";
-		else
-			driver_name = config.get(host, "default_storage") or "internal";
-		end
-	end
+--	local storage = stores_overrides:get(host, store) or config.get(host, "storage");
+--	local driver_name;
+--	local option_type = type(storage);
+--	if option_type == "string" then
+--		driver_name = storage;
+--	elseif option_type == "table" then
+--		driver_name = storage[store];
+--	end
+--	if not driver_name then
+--		if config.get(host, authentication) == "anonymous" then
+--			driver_name = config.get(host, "default_storage") or "null";
+--		else
+--			driver_name = config.get(host, "default_storage") or "internal";
+--		end
+--	end
+
+  local driver_name = "psql";
 
 	local driver = load_driver(host, driver_name);
 	if not driver then
