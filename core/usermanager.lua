@@ -40,7 +40,7 @@ local provider_mt = { __index = new_null_provider() };
 function initialize_host(host)
 	local host_session = hosts[host];
 	if host_session.type ~= "local" then return; end
-	
+
 	host_session.events.add_handler("item-added/auth-provider", function (event)
 		local provider = event.item;
 		local auth_provider = config.get(host, "authentication") or default_provider;
@@ -62,12 +62,15 @@ function initialize_host(host)
 	if auth_provider ~= "null" then
 		modulemanager.load(host, "auth_"..auth_provider);
 	end
+  log("debug", "A provider   host '%s'    '%s'", host, auth_provider);
+
 end;
 metronome.events.add_handler("host-activated", initialize_host, 100);
 
 local host_unknown = "host unknown or deactivated";
 
 function test_password(username, host, password)
+  log("debug", "test   host '%s'   user '%s'   pass '%s'", host, username, password);
 	if hosts[host] then return hosts[host].users.test_password(username, password); end
 	return nil, host_unknown;
 end
@@ -124,10 +127,10 @@ function is_admin(jid, host)
 	local is_admin;
 	jid = jid_bare(jid);
 	host = host or "*";
-	
+
 	local host_admins = config.get(host, "admins");
 	local global_admins = config.get("*", "admins");
-	
+
 	if host_admins and host_admins ~= global_admins then
 		if type(host_admins) == "table" then
 			for _,admin in ipairs(host_admins) do
@@ -140,7 +143,7 @@ function is_admin(jid, host)
 			log("error", "Option 'admins' for host '%s' is not a list", host);
 		end
 	end
-	
+
 	if not is_admin and global_admins then
 		if type(global_admins) == "table" then
 			for _,admin in ipairs(global_admins) do

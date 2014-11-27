@@ -92,4 +92,4 @@ function new_default_provider(host)
 	return provider;
 end
 
-module:add_item("auth-provider", new_hashpass_provider(module.host));
+module:add_item("auth-provider", new_default_provider(module.host));
