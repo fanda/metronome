@@ -62,8 +62,6 @@ function initialize_host(host)
 	if auth_provider ~= "null" then
 		modulemanager.load(host, "auth_"..auth_provider);
 	end
-  log("debug", "A provider   host '%s'    '%s'", host, auth_provider);
-
 end;
 metronome.events.add_handler("host-activated", initialize_host, 100);
 
