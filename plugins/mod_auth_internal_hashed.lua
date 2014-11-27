@@ -28,7 +28,7 @@ function new_hashpass_provider(host)
 
 	function provider.test_password(username, password)
 		local credentials = datamanager.load(username, host, "accounts") or {};
-	
+
 		if credentials.password ~= nil and string.len(credentials.password) ~= 0 then
 			if credentials.password ~= password then
 				return nil, "Auth failed. Provided password is incorrect.";
@@ -44,12 +44,12 @@ function new_hashpass_provider(host)
 		if credentials.iteration_count == nil or credentials.salt == nil or string.len(credentials.salt) == 0 then
 			return nil, "Auth failed. Stored salt and iteration count information is not complete.";
 		end
-		
+
 		local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, credentials.salt, credentials.iteration_count);
-		
+
 		local stored_key_hex = to_hex(stored_key);
 		local server_key_hex = to_hex(server_key);
-		
+
 		if valid and stored_key_hex == credentials.stored_key and server_key_hex == credentials.server_key then
 			return true;
 		else
@@ -65,7 +65,7 @@ function new_hashpass_provider(host)
 			local valid, stored_key, server_key = getAuthenticationDatabaseSHA1(password, account.salt, account.iteration_count);
 			local stored_key_hex = to_hex(stored_key);
 			local server_key_hex = to_hex(server_key);
-			
+
 			account.stored_key = stored_key_hex
 			account.server_key = server_key_hex
 
@@ -114,7 +114,7 @@ function new_hashpass_provider(host)
 		end
 		return new_sasl(module.host, testpass_authentication_profile);
 	end
-	
+
 	return provider;
 end
 

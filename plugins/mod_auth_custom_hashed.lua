@@ -11,7 +11,10 @@
 local datamanager = require "util.datamanager";
 local log = require "util.logger".init("auth_custom_hashed");
 local crypt = require "util.crypt";
-
+local new_sasl = require "util.sasl".new;
+local plain_test = module:require "sasl_aux".hashed_plain_test;
+local scram_backend = module:require "sasl_aux".hashed_scram_backend;
+local external_backend = module:require "sasl_aux".external_backend;
 -- Default; can be set per-user
 local iteration_count = 4096;
 
