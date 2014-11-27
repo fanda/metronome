@@ -18,9 +18,8 @@ local external_backend = module:require "sasl_aux".external_backend;
 -- Default; can be set per-user
 local iteration_count = 4096;
 
-function new_hashpass_provider(host)
+function new_default_provider(host)
 	local provider = { name = "custom_hashed" };
-	log("debug", "initializing custom_hashed authentication provider for host '%s'", host);
 
 	function provider.test_password(username, password)
     log("debug", "host '%s'  user '%s'  pass '%s'", host, username, password);
