@@ -75,7 +75,6 @@ end
 metronome.events.add_handler("host-activated", initialize_host, 101);
 
 function load_driver(host, driver_name)
-  log("debug", "Load driver  %s  for  %s", driver_name, host);
 	if driver_name == "null" then
 		return null_storage_driver;
 	end
@@ -119,7 +118,6 @@ function get_driver(host, store)
 		driver_name = "null";
 		driver = null_storage_driver;
 	end
-  log("debug", "Got driver  %s  for  %s", driver_name, host);
 	return driver, driver_name;
 end
 

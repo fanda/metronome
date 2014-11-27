@@ -66,7 +66,6 @@ local function test_connection()
 	end
 end
 local function connect()
-  module:log("debug", "Trx connect to database");
 	if not test_connection() then
 		metronome.unlock_globals();
 		local dbh, err = DBI.Connect(
@@ -120,12 +119,11 @@ end
 
 do -- process options to get a db connection
 	local ok;
-  module:log("debug", "process options to get a db connection");
 	metronome.unlock_globals();
 	ok, DBI = pcall(require, "DBI");
 	if not ok then
 		package.loaded["DBI"] = {};
-		module:log("error", "Failed to load the LuaDBI library for accessing SQL databases: %s", DBI);
+		module:log("debug", "Failed to load the LuaDBI library for accessing SQL databases: %s", DBI);
 	end
 	metronome.lock_globals();
 	if not ok or not DBI.Connect then
@@ -200,7 +198,7 @@ local function commit(...)
 end
 
 local function keyval_store_get()
-	local stmt, err = getsql("SELECT * FROM `metronome.metronome` WHERE `host`=? AND `user`=? AND `store`=?");
+	local stmt, err = getsql("SELECT * FROM metronome.metronome WHERE host=? AND user=? AND store=?");
 	if not stmt then return rollback(nil, err); end
 
 	local haveany;
@@ -220,7 +218,7 @@ local function keyval_store_get()
 	return commit(haveany and result or nil);
 end
 local function keyval_store_set(data)
-	local affected, err = setsql("DELETE FROM `metronome.metronome` WHERE `host`=? AND `user`=? AND `store`=?");
+	local affected, err = setsql("DELETE FROM metronome.metronome WHERE host=? AND user=? AND store=?");
 	if not affected then return rollback(affected, err); end
 
 	if data and next(data) ~= nil then
@@ -229,7 +227,7 @@ local function keyval_store_set(data)
 			if type(key) == "string" and key ~= "" then
 				local t, value = serialize(value);
 				if not t then return rollback(t, value); end
-				local ok, err = setsql("INSERT INTO `metronome.metronome` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", key, t, value);
+				local ok, err = setsql("INSERT INTO metronome.metronome (host,user,store,key,type,value) VALUES (?,?,?,?,?,?)", key, t, value);
 				if not ok then return rollback(ok, err); end
 			else
 				extradata[key] = value;
@@ -238,7 +236,7 @@ local function keyval_store_set(data)
 		if next(extradata) ~= nil then
 			local t, extradata = serialize(extradata);
 			if not t then return rollback(t, extradata); end
-			local ok, err = setsql("INSERT INTO `metronome.metronome` (`host`,`user`,`store`,`key`,`type`,`value`) VALUES (?,?,?,?,?,?)", "", t, extradata);
+			local ok, err = setsql("INSERT INTO metronome.metronome (host,user,store,key,type,value) VALUES (?,?,?,?,?,?)", "", t, extradata);
 			if not ok then return rollback(ok, err); end
 		end
 	end
@@ -273,7 +271,7 @@ function driver:open(store, typ)
 end
 
 function driver:stores(username, type, pattern)
-	local sql = "SELECT DISTINCT `store` FROM `metronome.metronome` WHERE `host`=? AND `user`"..(username == true and "!=?" or "=?").." AND `store` LIKE ?";
+	local sql = "SELECT DISTINCT store FROM metronome.metronome WHERE host=? AND user"..(username == true and "!=?" or "=?").." AND store LIKE ?";
 
 	if username == true or not username then
 		username = "";
@@ -297,7 +295,7 @@ function driver:stores(username, type, pattern)
 end
 
 function driver:store_exists(username, datastore, type)
-	local sql = "SELECT DISTINCT `store` FROM `metronome.metronome` WHERE `host`=? and `user`"..(username == true and "!=?" or "=?").." AND `store`=?";
+	local sql = "SELECT DISTINCT store FROM metronome.metronome WHERE host=? and user"..(username == true and "!=?" or "=?").." AND store=?";
 
 	if username == true or not username then username = ""; end
 
@@ -316,7 +314,7 @@ function driver:store_exists(username, datastore, type)
 end
 
 function driver:purge(username)
-	local stmt, err = dosql("DELETE FROM `metronome.accounts` WHERE `host`=? AND `user`=?", host, username);
+	local stmt, err = dosql("DELETE FROM metronome.accounts WHERE host=? AND user=?", host, username);
 	if not stmt then return rollback(stmt, err); end
 	local changed, err = stmt:affected();
 	if not changed then return rollback(changed, err); end
@@ -324,7 +322,7 @@ function driver:purge(username)
 end
 
 function driver:users()
-	local stmt, err = dosql("SELECT DISTINCT `user` FROM `metronome.accounts` WHERE `host`=?", host);
+	local stmt, err = dosql("SELECT DISTINCT user FROM metronome.accounts WHERE host=?", host);
 	if not stmt then return rollback(nil, err); end
 	local next = stmt:rows();
 	return commit(function()
@@ -334,7 +332,7 @@ function driver:users()
 end
 
 function driver:user(username)
-	local stmt, err = dosql("SELECT * FROM `metronome.users` WHERE `host`=? AND `user`=?", host, username);
+	local stmt, err = dosql("SELECT * FROM metronome.users WHERE host=? AND user=?", host, username);
 	if not stmt then return rollback(nil, err); end
 	local next = stmt:rows();
 	return commit(function()
