@@ -32,7 +32,7 @@ hashes.so: hashes.o
 	$(CC) -o $@ $< $(LDFLAGS) -l$(OPENSSL_LIB)
 
 crypt.so: crypt.o
-	$(CC) -o $@ $< $(LDFLAGS) -lcrypto -Wall
+	$(CC) -o $@ $< $(LDFLAGS) -lcrypt -Wall
 
 .c.o:
 	$(CC) $(CFLAGS) -I$(LUA_INCDIR) -c -o $@ $<
