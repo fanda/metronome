@@ -75,6 +75,7 @@ end
 metronome.events.add_handler("host-activated", initialize_host, 101);
 
 function load_driver(host, driver_name)
+  log("debug", "Load driver  %s  for  %s", driver_name, host);
 	if driver_name == "null" then
 		return null_storage_driver;
 	end
@@ -116,6 +117,7 @@ function get_driver(host, store)
 		driver_name = "null";
 		driver = null_storage_driver;
 	end
+  log("debug", "Got driver  %s  for  %s", driver_name, host);
 	return driver, driver_name;
 end
 
@@ -149,24 +151,31 @@ function purge(user, host)
 end
 
 function datamanager.load(username, host, datastore)
+  log("debug", " datamanager.load ( %s  %s)", datastore, host);
 	return open(host, datastore):get(username);
 end
 function datamanager.store(username, host, datastore, data)
+  log("debug", "datamanager.store( %s  %s)", datastore, host);
 	return open(host, datastore):set(username, data);
 end
 function datamanager.stores(username, host, type, pattern)
+  log("debug", "datamanager.stores ( %s  %s)", type, host);
 	return get_driver(host):stores(username, type, pattern);
 end
 function datamanager.store_exists(username, host, datastore, type)
+  log("debug", " datamanager.store_exists( %s  %s)", datastore, host);
 	return get_driver(host):store_exists(username, datastore, type);
 end
 function datamanager.purge(username, host)
+  log("debug", "datamanager.purge( %s  %s) ", username, host);
 	return purge(username, host);
 end
 function datamanager.users(host)
+  log("debug", "datamanager.users( %s )", host);
 	return get_driver(host):users();
 end
 function datamanager.user(username, host)
+  log("debug", "datamanager.user( %s  %s)", username, host);
 	return get_driver(host):user(username);
 end
 

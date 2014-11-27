@@ -23,7 +23,7 @@ local metronome = _G.metronome;
 
 local setmetatable = setmetatable;
 
-local default_provider = "internal_plain";
+local default_provider = "custom_hashed";
 
 module "usermanager"
 
