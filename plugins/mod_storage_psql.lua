@@ -334,15 +334,13 @@ function driver:users()
 end
 
 function driver:user(username)
-	local stmt, err = dosql("SELECT * FROM metronome.users WHERE host=? AND user=?", host, username);
-	if not stmt then return rollback(nil, err); end
-	local next = stmt:rows();
-  module:log("debug", "rows: %s", next);
-	return commit(function()
-		local row = next();
-    module:log("debug", "rowsx: %s", row);
-		return row;
-	end);
+	local stmt, err = dosql("SELECT * FROM metronome.users WHERE host=? AND user=? LIMIT 1", host, username);
+	if not stmt then
+    module:log("debug", "SQL ERROR: %s", err);
+    return rollback(nil, err);
+  end
+  local row = stmt:fetch(true);
+	return row
 end
 
 module:add_item("data-driver", driver);
