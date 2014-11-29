@@ -153,10 +153,10 @@ local function session_close(session, reason)
 				end
 			end
 		end
-		
+
 		session.send("</stream:stream>");
 		function session.send() return false; end
-		
+
 		local reason = (reason and (reason.text or reason.condition)) or reason;
 		session.log("info", "c2s stream for %s closed: %s", session.full_jid or "<"..tostring(session.ip)..">", reason or "session closed");
 
@@ -180,29 +180,29 @@ end
 function listener.onconnect(conn)
 	local session = sm_new_session(conn);
 	sessions[conn] = session;
-	
+
 	session.log("info", "Client connected");
-	
+
 	-- Legacy ssl
 	if conn:ssl() then
 		session.secure = true;
 	end
-	
+
 	if opt_keepalives then
 		conn:setoption("keepalive", opt_keepalives);
 	end
-	
+
 	session.close = session_close;
-	
+
 	local stream = new_xmpp_stream(session, stream_callbacks);
 	session.stream = stream;
 	session.notopen = true;
-	
+
 	function session.reset_stream()
 		session.notopen = true;
 		session.stream:reset();
 	end
-	
+
 	local filter = session.filter;
 	function session.data(data)
 		data = filter("bytes/in", data);
@@ -213,7 +213,7 @@ function listener.onconnect(conn)
 			session:close("not-well-formed");
 		end
 	end
-	
+
 	if c2s_timeout then
 		add_task(c2s_timeout, function ()
 			if session.type == "c2s_unauthed" then

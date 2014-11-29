@@ -30,7 +30,7 @@ module "sessionmanager"
 
 function new_session(conn)
 	local session = { conn = conn, type = "c2s_unauthed", conntime = gettime() };
-	
+
 	local filter = initialize_filters(session);
 	local w = conn.write;
 	session.send = function (t)
@@ -47,7 +47,7 @@ function new_session(conn)
 	session.ip = conn:ip();
 	local conn_name = "c2s"..tostring(conn):match("[a-f0-9]+$");
 	session.log = logger.init(conn_name);
-		
+
 	return session;
 end
 
@@ -78,17 +78,17 @@ function destroy_session(session, err)
 	if not session.detached then
 		(session.log or log)("debug", "Destroying session for %s (%s@%s)%s", session.full_jid or "(unknown)", session.username or "(unknown)", session.host or "(unknown)", err and (": "..err) or "");
 	end
-	
+
 	if session.full_jid then
 		local host_session = hosts[session.host];
-		
+
 		if host_session.events.fire_event("pre-resource-unbind", {session=session, error=err}) then
 			return;
 		end
-		
+
 		host_session.sessions[session.username].sessions[session.resource] = nil;
 		full_sessions[session.full_jid] = nil;
-		
+
 		if not next(host_session.sessions[session.username].sessions) then
 			log("debug", "All resources of %s are now offline", session.username);
 			host_session.sessions[session.username] = nil;
@@ -97,7 +97,7 @@ function destroy_session(session, err)
 
 		host_session.events.fire_event("resource-unbind", {session=session, error=err});
 	end
-	
+
 	retire_session(session);
 end
 
@@ -118,7 +118,7 @@ function bind_resource(session, resource)
 
 	resource = resourceprep(resource);
 	resource = resource ~= "" and resource or uuid_generate();
-	
+
 	if not hosts[session.host].sessions[session.username] then
 		local sessions = { sessions = {} };
 		hosts[session.host].sessions[session.username] = sessions;
@@ -155,15 +155,15 @@ function bind_resource(session, resource)
 			end
 		end
 	end
-	
+
 	session.resource = resource;
 	session.full_jid = session.username .. '@' .. session.host .. '/' .. resource;
 	hosts[session.host].sessions[session.username].sessions[resource] = session;
 	full_sessions[session.full_jid] = session;
-	
+
 	hosts[session.host].events.fire_event("initialize-roster", { session = session });
 	hosts[session.host].events.fire_event("resource-bind", { session = session });
-	
+
 	return true;
 end
 

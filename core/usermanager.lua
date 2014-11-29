@@ -84,6 +84,7 @@ function set_password(username, password, host)
 end
 
 function user_exists(username, host)
+   log("debug", "exist   host '%s'   user '%s'   pass '%s'", host, username);
 	if hosts[host] then return hosts[host].users.user_exists(username); end
 	return nil, host_unknown;
 end
