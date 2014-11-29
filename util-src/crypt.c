@@ -11,12 +11,13 @@
 #define _XOPEN_SOURCE
 #include <unistd.h>
 #include <crypt.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 static int mycrypt(lua_State *L)
 {
     const char *key;
     const char *salt;
-
     if(lua_gettop(L) != 2)
     {
         lua_pushstring(L, "Bad argument number");
