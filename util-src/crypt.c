@@ -7,6 +7,7 @@
  */
 
 #include "lua.h"
+#include "lauxlib.h"
 #define _XOPEN_SOURCE
 #include <unistd.h>
 #include <crypt.h>
@@ -42,7 +43,8 @@ static int mycrypt(lua_State *L)
 }
 
 static const luaL_Reg Reg[] = {
-   {"crypt", mycrypt}
+  {"crypt", mycrypt},
+	{ NULL,		NULL	}
 };
 
 
