@@ -166,6 +166,7 @@ local function deserialize(t, value)
 end
 
 local function dosql(sql, ...)
+  module:log("debug", "SQL: %s", sql);
   sql = sql:gsub("`", "\"");
 	-- do prepared statement stuff
 	if not connection and not connect() then return nil, "Unable to connect to database"; end
@@ -325,6 +326,7 @@ function driver:users()
 	local stmt, err = dosql("SELECT DISTINCT user FROM metronome.accounts WHERE host=?", host);
 	if not stmt then return rollback(nil, err); end
 	local next = stmt:rows();
+
 	return commit(function()
 		local row = next();
 		return row and row[1];
@@ -335,8 +337,10 @@ function driver:user(username)
 	local stmt, err = dosql("SELECT * FROM metronome.users WHERE host=? AND user=?", host, username);
 	if not stmt then return rollback(nil, err); end
 	local next = stmt:rows();
+  module:log("debug", "rows: %s", next);
 	return commit(function()
 		local row = next();
+    module:log("debug", "rowsx: %s", row);
 		return row;
 	end);
 end
