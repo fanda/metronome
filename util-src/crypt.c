@@ -41,14 +41,14 @@ static int mycrypt(lua_State *L)
     return 1;
 }
 
-static const struct luaL_Reg lcrypt_lib[] = {
+static const luaL_Reg Reg[] = {
    {"crypt", mycrypt}
 };
 
 
 LUALIB_API int luaopen_util_crypt(lua_State *L)
 {
-    luaL_register(L, "crypt", lcrypt_lib);
+    luaL_register(L, "crypt", Reg);
     return 1;
 }
 
