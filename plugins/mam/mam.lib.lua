@@ -17,7 +17,8 @@ local storagemanager = storagemanager;
 local load_roster = require "util.rostermanager".load_roster;
 local ipairs, next, now, pairs, ripairs, select, t_remove, tostring = ipairs, next, os.time, pairs, ripairs, select, table.remove, tostring;
       
-local xmlns = "urn:xmpp:mam:tmp";
+local xmlns = "urn:xmpp:mam:0";
+local legacy_xmlns = "urn:xmpp:mam:tmp";
 local delay_xmlns = "urn:xmpp:delay";
 local e2e_xmlns = "http://www.xmpp.org/extensions/xep-0200.html#ns";
 local forward_xmlns = "urn:xmpp:forward:0";
@@ -128,9 +129,9 @@ local function log_marker(session_archive, to, bare_to, from, bare_from, id, mar
 	end
 end
 
-local function append_stanzas(stanzas, entry, qid)
+local function append_stanzas(stanzas, entry, qid, legacy)
 	local to_forward = st.message()
-		:tag("result", { xmlns = xmlns, queryid = qid, id = entry.id })
+		:tag("result", { xmlns = legacy and legacy_xmlns or xmlns, queryid = qid, id = entry.id })
 			:tag("forwarded", { xmlns = forward_xmlns })
 				:tag("delay", { xmlns = delay_xmlns, stamp = dt(entry.timestamp) }):up()
 				:tag("message", { to = entry.to, from = entry.from, id = entry.id });
@@ -144,18 +145,27 @@ local function append_stanzas(stanzas, entry, qid)
 	stanzas[#stanzas + 1] = to_forward;
 end
 
-local function generate_query(stanzas, start, fin, set, first, last, count)
-	local query = st.stanza("query", { xmlns = xmlns });
+local function generate_set(stanza, first, last, count, index)
+	stanza:tag("set", { xmlns = rsm_xmlns })
+		:tag("first", { index = index or 0 }):text(first):up()
+		:tag("last"):text(last or first):up()
+		:tag("count"):text(tostring(count)):up();
+end
+
+local function generate_query(stanzas, start, fin, set, first, last, count, index)
+	local query = st.stanza("query", { xmlns = legacy_xmlns });
 	if start then query:tag("start"):text(dt(start)):up(); end
 	if fin then query:tag("end"):text(dt(fin)):up(); end
-	if set and #stanzas ~= 0 then
-		query:tag("set", { xmlns = rsm_xmlns })
-			:tag("first", { index = 0 }):text(first):up()
-			:tag("last"):text(last or first):up()
-			:tag("count"):text(tostring(count)):up();
-	end
+	if set and #stanzas ~= 0 then generate_set(query, first, last, count); end
 	
 	return (((start or fin) or (set and #stanzas ~= 0)) and query) or nil;
+end
+
+local function generate_fin(stanzas, first, last, count, index, complete)
+	local fin = st.stanza("fin", { xmlns = xmlns, complete = (complete or count == 0) and "true" or nil });
+	generate_set(fin, first, last, count, index);
+
+	return fin;
 end
 
 local function dont_add(entry, with, start, fin, timestamp)
@@ -176,6 +186,17 @@ local function get_index(logs, index)
 	for i, entry in ipairs(logs) do 
 		if entry.uid == index then return i; end
 	end
+end
+
+local function remove_upto_index(logs, index)
+	if index > #logs then
+		logs = {};
+	else
+		for i = 1, #logs do
+			if i ~= index then t_remove(logs, i); else break; end
+		end
+	end
+	return logs;
 end
 
 local function count_relevant_entries(logs, with, start, fin)
@@ -208,7 +229,7 @@ local function count_relevant_entries(logs, with, start, fin)
 	return count;
 end
 
-local function generate_stanzas(store, start, fin, with, max, after, before, qid)
+local function generate_stanzas(store, start, fin, with, max, after, before, index, qid, rsm, legacy)
 	local logs = store.logs;
 	local stanzas = {};
 	local query;
@@ -245,13 +266,17 @@ local function generate_stanzas(store, start, fin, with, max, after, before, qid
 			for i = (sub < 0 and 1) or sub, entry_index do to_process[#to_process + 1] = logs[i]; end
 			_entries_count = count_relevant_entries(to_process, with, start, fin);
 		end
-		
+
 		for i, entry in ipairs(to_process) do
 			local timestamp = entry.timestamp;
 			local uid = entry.uid
 			if not dont_add(entry, with, start, fin, timestamp) then
-				append_stanzas(stanzas, entry, qid);
+				append_stanzas(stanzas, entry, qid, legacy);
 			end
+		end
+		if index then
+			stanzas = remove_upto_index(stanzas, index);
+			if #stanzas == 0 then return nil; end
 		end
 		if #stanzas ~= 0 then
 			local first_e, last_e = to_process[1], to_process[#to_process];
@@ -260,7 +285,9 @@ local function generate_stanzas(store, start, fin, with, max, after, before, qid
 		end
 
 		_count = max and _entries_count - max or 0;
-		query = generate_query(stanzas, (start or _start), (fin or _end), (max and true), first, last, (_count < 0 and 0) or _count);
+		query = legacy and
+			generate_query(stanzas, (start or _start), (fin or _end), rsm, first, last, (_count < 0 and 0) or _count, index) or
+			generate_fin(stanzas, first, last, (_count < 0 and 0) or _count, index, before == true);
 		return stanzas, query;
 	elseif after then
 		entry_index = get_index(logs, after);
@@ -276,7 +303,7 @@ local function generate_stanzas(store, start, fin, with, max, after, before, qid
 		local timestamp = entry.timestamp;
 		local uid = entry.uid;
 		if not dont_add(entry, with, start, fin, timestamp) then
-			append_stanzas(stanzas, entry, qid);
+			append_stanzas(stanzas, entry, qid, legacy);
 			if max then
 				if _at == 1 then 
 					first = uid;
@@ -290,11 +317,16 @@ local function generate_stanzas(store, start, fin, with, max, after, before, qid
 		end
 		if max and _at ~= 1 and _at > max then break; end
 	end
-	
+	if index then
+		stanzas = remove_upto_index(stanzas, index);
+		if #stanzas == 0 then return nil; end
+	end
 	if not max and #stanzas > 30 then return false; end
 	
 	_count = max and _entries_count - max or 0;
-	query = generate_query(stanzas, (start or _start), (fin or _end), (max and true), first, last, (_count < 0 and 0) or _count);
+	query = legacy and
+		generate_query(stanzas, (start or _start), (fin or _end), rsm, first, last, (_count < 0 and 0) or _count, index) or
+		generate_fin(stanzas, first, last, (_count < 0 and 0) or _count, index);
 	return stanzas, query;
 end
 

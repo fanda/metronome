@@ -337,19 +337,21 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 				log("debug", "%s leaving %s", current_nick, room);
 				self._jid_nick[from] = nil;
 				local occupant = self._occupants[current_nick];
-				local new_jid = next(occupant.sessions);
-				if new_jid == from then new_jid = next(occupant.sessions, new_jid); end
+				local sessions = occupant.sessions;
+				local new_jid = next(sessions);
+				if new_jid == from then new_jid = next(sessions, new_jid); end
 				if new_jid then
 					local jid = occupant.jid;
 					occupant.jid = new_jid;
-					occupant.sessions[from] = nil;
+					sessions[from] = nil;
 					pr.attr.to = from;
 					pr:tag("x", {xmlns = "http://jabber.org/protocol/muc#user"})
 						:tag("item", {affiliation = occupant.affiliation or "none", role = "none"}):up()
 						:tag("status", {code = "110"}):up();
+					module:fire_event("muc-occupant-part-presence", self, pr, origin);
 					self:_route_stanza(pr);
 					if jid ~= new_jid then
-						pr = st.clone(occupant.sessions[new_jid])
+						pr = st.clone(sessions[new_jid])
 							:tag("x", {xmlns = "http://jabber.org/protocol/muc#user"})
 							:tag("item", {affiliation = occupant.affiliation or "none", role = occupant.role or "none"});
 						pr.attr.from = current_nick;
@@ -357,10 +359,11 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 					end
 				else
 					occupant.role = "none";
+					module:fire_event("muc-occupant-part-presence", self, pr, origin);
 					self:broadcast_presence(pr, from);
 					self._occupants[current_nick] = nil;
 				end
-				module:fire_event("muc-occupant-left", self, pr, origin);
+				module:fire_event("muc-occupant-part", self.jid, from, current_nick, next(sessions, next(sessions)) and true);
 			end
 		elseif not type then -- available
 			if current_nick then
@@ -390,6 +393,7 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 								pr.attr.from = to;
 								self._occupants[to].sessions[from] = pr;
 								self:broadcast_presence(pr, from);
+								module:fire_event("muc-occupant-nick-change", self.jid, from, current_nick, to);
 							else
 								log("debug", "%s sent a malformed nick change request!", current_nick);
 								origin.send(st.error_reply(stanza, "cancel", "jid-malformed"));
@@ -447,10 +451,11 @@ function room_mt:handle_to_occupant(origin, stanza) -- PM, vCards, etc
 						end
 						if self._data.whois == "anyone" then pr:tag("status", {code = "100"}):up(); end
 						pr:tag("status", {code = "110"}):up();
-						module:fire_event("muc-occupant-joined", self, pr, origin);
+						module:fire_event("muc-occupant-join-presence", self, pr, origin);
 						pr.attr.to = from;
 						self:_route_stanza(pr);
 						self:send_history(from, stanza);
+						module:fire_event("muc-occupant-join", self.jid, from, to);
 					elseif not affiliation then -- registration required for entering members-only room
 						local reply = st.error_reply(stanza, "auth", "registration-required"):up();
 						reply.tags[1].attr.code = "407";
@@ -679,6 +684,9 @@ function room_mt:destroy(newjid, reason, password)
 		end
 		self._occupants[nick] = nil;
 	end
+	module:fire_event("muc-room-destroyed",
+		{ room = self, data = { newjid = newjid, reason = reason, password = password } }
+	);
 	if self:set_option("persistent", false) and self.save then self:save(true); end
 end
 
@@ -905,30 +913,44 @@ function room_mt:handle_to_room(origin, stanza) -- presence changes and groupcha
 		else
 			origin.send(st.error_reply(stanza, "cancel", "bad-request"));
 		end
-	else
-		if type == "error" or type == "result" then return; end
+	elseif stanza.name ~= "iq" and type ~= "error" then
 		origin.send(st.error_reply(stanza, "cancel", "service-unavailable"));
 	end
 end
 
 function room_mt:handle_stanza(origin, stanza)
 	local to_node, to_host, to_resource = jid_split(stanza.attr.to);
+	local name, type = stanza.name, stanza.attr.type;
 	if to_resource then
 		self:handle_to_occupant(origin, stanza);
 	else
-		self:handle_to_room(origin, stanza);
+		if name == "iq" and (type ~= "error" and type ~= "result") or name ~= "iq" then
+			self:handle_to_room(origin, stanza);
+		else
+			log("debug", "discarding iq %s sent to %s from %s", type, stanza.attr.to, stanza.attr.from);
+		end
 	end
 end
 
 function room_mt:route_stanza(stanza) end
 
 function room_mt:get_affiliation(jid)
-	local node, host, resource = jid_split(jid);
+	local node, host = jid_split(jid);
 	local bare = node and node.."@"..host or host;
 	local result = self._affiliations[bare]; -- Affiliations are granted, revoked, and maintained based on the user's bare JID.
 	if not result and self._affiliations[host] == "outcast" then result = "outcast"; end -- host banned
 	return result;
 end
+
+function room_mt:is_affiliated(jid)
+	jid = jid_bare(jid);
+	local affiliation = self._affiliations[jid];
+	if affiliation then
+		return (affiliation ~= "outcast" and true);
+	end
+	return nil;
+end
+
 function room_mt:set_affiliation(actor, jid, affiliation, callback, reason, dummy)
 	jid = jid_bare(jid);
 	if affiliation == "none" then affiliation = nil; end

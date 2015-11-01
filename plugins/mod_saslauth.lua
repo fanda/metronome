@@ -11,7 +11,8 @@ local st = require "util.stanza";
 local sm_make_authenticated = require "core.sessionmanager".make_authenticated;
 local base64 = require "util.encodings".base64;
 local usermanager_get_sasl_handler = require "core.usermanager".get_sasl_handler;
-local tostring = tostring;
+local offer_external = module:require "sasl_aux".offer_external;
+local ipairs, tostring = ipairs, tostring;
 local host_session = hosts[module.host];
 
 local no_encryption = metronome.no_encryption;
@@ -145,10 +146,13 @@ module:hook("stream-features", function(event)
 		end
 		origin.sasl_handler = usermanager_get_sasl_handler(module.host, origin);
 		local mechanisms = st.stanza("mechanisms", mechanisms_attr);
-		for mechanism in pairs(origin.sasl_handler:mechanisms()) do
-			if (not blacklisted_mechanisms or not blacklisted_mechanisms:contains(mechanism)) and
-			   (mechanism ~= "PLAIN" or origin.secure or allow_unencrypted_plain_auth) then
-				mechanisms:tag("mechanism"):text(mechanism):up();
+		for _, mechanism in ipairs(origin.sasl_handler:mechanisms()) do
+			if not blacklisted_mechanisms or not blacklisted_mechanisms:contains(mechanism) then
+				if ((mechanism == "PLAIN" and origin.secure) or allow_unencrypted_plain_auth) or
+				   (mechanism == "EXTERNAL" and offer_external(origin)) or
+				   (mechanism ~= "EXTERNAL" and mechanism ~= "PLAIN") then
+					mechanisms:tag("mechanism"):text(mechanism):up();
+				end
 			end
 		end
 		if mechanisms[1] then features:add_child(mechanisms); end
