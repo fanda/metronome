@@ -22,9 +22,7 @@ function new_default_provider(host)
 	local provider = { name = "custom_hashed" };
 
 	function provider.test_password(username, password)
-    log("debug", "test_password host '%s'  user '%s'  pass '%s'", host, username, password);
 		local user = datamanager.user(username, host) or {};
-    log("debug", "test_password hash '%s'", user.hash);
 		if password ~= nil and string.len(password) ~= 0 then
       if crypt.crypt(password, user.hash) == user.hash then
         return true;
