@@ -91,7 +91,7 @@ local function create_table()
 	if not module:get_option("sql_manage_tables", true) then
 		return;
 	end
-	local create_sql = "CREATE SCHEMA `metronome` (`host` TEXT, `user` TEXT, `store` TEXT, `key` TEXT, `type` TEXT, `value` TEXT);";
+	local create_sql = "CREATE SCHEMA metronome; CREATE TABLE `metronome.metronome` (`host` TEXT, `user` TEXT, `store` TEXT, `key` TEXT, `type` TEXT, `value` TEXT);";
   create_sql = create_sql:gsub("`", "\"");
 
 	local stmt, err = connection:prepare(create_sql);
@@ -100,7 +100,7 @@ local function create_table()
 		local commit_ok = connection:commit();
 		if ok and commit_ok then
 			module:log("info", "Initialized new %s database with metronome table", params.driver);
-			local index_sql = "CREATE INDEX `metronome_index` ON `metronome` (`host`, `user`, `store`, `key`)";
+			local index_sql = "CREATE INDEX `metronome_index` ON `metronome.metronome` (`host`, `user`, `store`, `key`)";
 			if params.driver == "PostgreSQL" then
 				index_sql = index_sql:gsub("`", "\"");
 			end
