@@ -16,6 +16,7 @@ local plain_test = module:require "sasl_aux".hashed_plain_test;
 local scram_backend = module:require "sasl_aux".hashed_scram_backend;
 local external_backend = module:require "sasl_aux".external_backend;
 
+
 -- Default; can be set per-user
 local iteration_count = 4096;
 
