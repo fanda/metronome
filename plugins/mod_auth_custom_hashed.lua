@@ -15,6 +15,7 @@ local new_sasl = require "util.sasl".new;
 local plain_test = module:require "sasl_aux".hashed_plain_test;
 local scram_backend = module:require "sasl_aux".hashed_scram_backend;
 local external_backend = module:require "sasl_aux".external_backend;
+
 -- Default; can be set per-user
 local iteration_count = 4096;
 
@@ -72,9 +73,9 @@ function new_default_provider(host)
 --		return datamanager.store(username, host, "accounts", {stored_key = stored_key_hex, server_key = server_key_hex, salt = salt, iteration_count = iteration_count});
 --	end
 
-	function provider.delete_user(username)
-		return datamanager.purge(username, host);
-	end
+--	function provider.delete_user(username)
+--		return datamanager.purge(username, host);
+--	end
 
 	function provider.get_sasl_handler(session)
     log("debug", "get_sasl_handler at host '%s'", username, module.host);

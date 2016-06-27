@@ -91,7 +91,7 @@ local function create_table()
 	if not module:get_option("sql_manage_tables", true) then
 		return;
 	end
-	local create_sql = "CREATE SCHEMA metronome; CREATE TABLE `metronome.metronome` (`host` TEXT, `user` TEXT, `store` TEXT, `key` TEXT, `type` TEXT, `value` TEXT);";
+	local create_sql = "CREATE SCHEMA IF NOT EXISTS metronome; CREATE TABLE `metronome.metronome` (`host` TEXT, `user` TEXT, `store` TEXT, `key` TEXT, `type` TEXT, `value` TEXT);";
   create_sql = create_sql:gsub("`", "\"");
 
 	local stmt, err = connection:prepare(create_sql);
@@ -171,7 +171,7 @@ local function dosql(sql, ...)
 	-- do prepared statement stuff
 	if not connection and not connect() then return nil, "Unable to connect to database"; end
 	local stmt, err = connection:prepare(sql);
-	if err and err:match(".*MySQL server has gone away$") then
+	if err and err:match(".*PgSQL server has gone away$") then
 		stmt, err = connect() and connection:prepare(sql); -- reconnect
 	end
 	if not stmt then module:log("error", "QUERY FAILED: %s -- %s", err or "Connection to database failed", debug.traceback()); return nil, err; end
