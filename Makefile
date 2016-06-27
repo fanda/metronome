@@ -14,7 +14,7 @@ INSTALLEDDATA = $(DATADIR)
 .PHONY: all clean install upgrade uninstall
 
 all: generate_log.install metronome.install metronomectl.install metronome.cfg.lua.install metronome.version
-	$(MAKE) -C util-src install
+	$(MAKE) -C util-src install     DESTDIR=$(DESTDIR)
 	$(MAKE) -C certs localhost.cnf
 	$(MAKE) -C certs localhost.key
 	$(MAKE) -C certs localhost.cert
@@ -31,7 +31,7 @@ install: metronome.install metronomectl.install metronome.cfg.lua.install metron
 	install -d $(BIN) $(CONFIG) $(MODULES) $(SOURCE)
 	install -m750 -d $(DATA)
 	install -d $(CONFIG)/certs
-	install -d $(SOURCE)/core $(SOURCE)/net $(SOURCE)/util
+	install -d $(SOURCE)/core $(SOURCE)/net $(SOURCE)/util $(MODULES)/muc_log_http
 	install -m755 ./metronome.install $(BIN)/metronome
 	install -m755 ./metronomectl.install $(BIN)/metronomectl
 	install -m644 core/* $(SOURCE)/core
@@ -43,11 +43,10 @@ install: metronome.install metronomectl.install metronome.cfg.lua.install metron
 	install -d $(SOURCE)/util/sasl
 	install -m644 util/sasl/* $(SOURCE)/util/sasl
 	umask 0022 && cp -r plugins/* $(MODULES)
-	install -m755 ./generate_log.install $(MODULES)/muc_log_http/generate_log
 	install -m644 certs/* $(CONFIG)/certs
 	test -e $(CONFIG)/metronome.cfg.lua || install -m644 metronome.cfg.lua.install $(CONFIG)/metronome.cfg.lua
 	test -e metronome.version && install metronome.version $(SOURCE)/metronome.version || true
-	$(MAKE) install -C util-src
+	$(MAKE) install -C util-src DESTDIR=$(DESTDIR)
 
 git-upgrade:
 	@sleep 5
@@ -55,14 +54,14 @@ git-upgrade:
 	git pull
 	$(MAKE) clean
 	$(MAKE) all
-	sudo $(MAKE) install
+	sudo $(MAKE) install   DESTDIR=$(DESTDIR)
 
 hg-upgrade:
 	@sleep 5
 	hg pull -u
 	$(MAKE) clean
 	$(MAKE) all
-	sudo $(MAKE) install
+	sudo $(MAKE) install   DESTDIR=$(DESTDIR)
 
 uninstall:
 	rm -rf $(SOURCE)
@@ -78,7 +77,7 @@ upgrade:
 	@if [ -d .git ]; then $(MAKE) git-upgrade; else $(MAKE) hg-upgrade; fi
 
 util/%.so:
-	$(MAKE) install -C util-src
+	$(MAKE) install -C util-src  DESTDIR=$(DESTDIR)
 
 %.install: %
 	sed "s|^#!\/usr\/bin\/env lua$$|#!\/usr\/bin\/env lua$(LUA_SUFFIX)|; \
